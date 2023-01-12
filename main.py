@@ -1,0 +1,520 @@
+import sys
+import sqlite3
+from random import randint, sample
+from data.enter import UiEnter
+from data.choice import UiChoice
+from data.pattern_num import UiPatternNum
+from data.action import UiAction
+from PyQt5 import uic
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QMainWindow, QAction, QLabel
+
+
+class EnterWindow(QWidget, UiEnter):
+    def __init__(self, *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
+        #uic.loadUi('enter.ui', self)
+        self.setupUi(self)
+        self.btn_singin.clicked.connect(self.sing_in)
+        self.btn_singup.clicked.connect(self.sing_up)
+        self.anonim.clicked.connect(self.f_anonim)
+
+    def sing_in(self):
+
+        self.widget_window = Action(typ='in')
+        self.widget_window.show()
+        self.close()
+
+    def sing_up(self):
+        self.widget_window = Action(typ='up')
+        self.widget_window.show()
+        self.close()
+
+    def f_anonim(self):
+        self.widget_window = Choice()
+        self.widget_window.show()
+        self.close()
+
+
+class Action(QWidget, UiAction):
+    def __init__(self, typ='', *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
+        self.setupUi(self)
+        self.typ = typ
+        if typ == 'in':
+            self.info_label.setText('Вход')
+            self.actoin_btn.setText('Вход')
+            self.setWindowTitle('Вход')
+        if typ == 'up':
+            self.info_label.setText('Регистрация')
+            self.actoin_btn.setText('Регистрация')
+            self.setWindowTitle('Регистрация')
+        self.actoin_btn.clicked.connect(self.check_log_pass)
+
+    def check_log_pass(self):
+        def passworld_check(passworld):
+            def pas_len(password):
+                if len(password) > 8:
+                    return True
+                return False
+
+            def low_and_up(password: str):
+                lower, upper = False, False
+                for i in password:
+                    if lower and upper:
+                        return True
+                    if i.islower():
+                        lower = True
+                    if i.isupper():
+                        upper = True
+                return False
+
+            def dig(password: str):
+                for i in '1234567890':
+                    if i in password:
+                        return True
+
+            def combat(password: str):
+                s = password.lower()
+                for i in range(2, len(combat_s) + 1):
+                    if combat_s[i - 2:i + 1] in s:
+                        return False
+                return True
+
+            combat_s = 'qwertyuiop!asdfghjkl!zxcvbnm!йцукенгшщзхъ!фывапролджэё!ячсмитьбю'
+            p = passworld
+            if pas_len(p) and low_and_up(p) and dig(p) and combat(p):
+                return True
+            return False
+
+        log_input = str(self.line_log.text())
+        pas_input = str(self.line_pas.text())
+        # Проходит вход
+        if self.typ == 'in':
+            try:
+                con = sqlite3.connect("registr.db")
+                cur = con.cursor()
+                log_in_data = cur.execute("""SELECT UserLogin FROM Users 
+                WHERE UserLogin = '""" + log_input + "'").fetchall()
+                pas_in_data = cur.execute("""SELECT Password FROM Users
+                WHERE UserLogin = '""" + log_input + "'").fetchall()
+                con.close()
+                if str(log_in_data[0][0]) == log_input and pas_input == str(pas_in_data[0][0]):
+                    self.action_battoun()
+                else:
+                    self.result_lab.setText('Неверный логин или пароль.')
+            except Exception:
+                self.result_lab.setText('Неверный логин или пароль.')
+        # Проходит регистрация
+        if self.typ == 'up':
+            try:
+                con = sqlite3.connect("registr.db")
+                cur = con.cursor()
+                log_in_data = cur.execute("""SELECT UserLogin FROM Users 
+                WHERE UserLogin = '""" + log_input + "'").fetchall()
+                try:
+                    if  log_in_data[0][0] == log_input:
+                        self.result_lab.setText('Такой логин уже существует или пароль не соответствует требованиям.')
+                except IndexError:
+                    if passworld_check(pas_input):
+                        cur.execute("""INSERT INTO Users(UserLogin, Password) 
+                        VALUES('""" + log_input + "', '" + pas_input + "')")
+                        con.commit()
+                        con.close()
+                        self.action_battoun()
+                    else:
+                        self.result_lab.setText('Такой логин уже существует или пароль не соответствует требованиям.')
+            except Exception:
+                con.close()
+                self.result_lab.setText('Неверный логин или пароль.')
+        self.user_login = log_input
+
+
+    def action_battoun(self):
+        self.widget_window = Choice()
+        self.widget_window.show()
+        self.close()
+
+
+class Choice(QMainWindow, UiChoice): # Создаём окно с выбором заданий
+    def __init__(self, *args, **kwargs):
+        QMainWindow.__init__(self, *args, **kwargs)
+        #uic.loadUi('choice.ui', self)
+        self.setupUi(self)
+        self.num_8a.clicked.connect(self.number_8a)
+        self.num_7_1.clicked.connect(self.number_7_1)
+        self.num_7_2.clicked.connect(self.number_7_2)
+
+    def number_8a(self):
+        self.widget_window = QNum8a()
+        self.widget_window.show()
+
+    def number_7_1(self):
+        self.widget_window = QNum71()
+        self.widget_window.show()
+
+    def number_7_2(self):
+        self.widget_window = QNum72()
+        self.widget_window.show()
+
+
+class PatternNumWidget(QWidget, UiPatternNum):
+    def __init__(self, *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
+        super().__init__()
+        self.setupUi(self)
+        self.check_answer.clicked.connect(self.checking_answer)
+
+
+    def checking_answer(self):
+        if self.lineed.text() == self.answer1:
+            self.corr_notcorr.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed.setEnabled(False)
+        if self.lineed_2.text() == self.answer2:
+            self.corr_notcorr_2.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_2.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_2.setEnabled(False)
+        if self.lineed_3.text() == self.answer3:
+            self.corr_notcorr_3.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_3.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_3.setEnabled(False)
+        if self.lineed_4.text() == self.answer4:
+            self.corr_notcorr_4.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_4.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_4.setEnabled(False)
+        if self.lineed_5.text() == self.answer5:
+            self.corr_notcorr_5.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_5.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_5.setEnabled(False)
+        if self.lineed_6.text() == self.answer6:
+            self.corr_notcorr_6.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_6.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_6.setEnabled(False)
+        if self.lineed_7.text() == self.answer7:
+            self.corr_notcorr_7.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_7.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_7.setEnabled(False)
+        if self.lineed_8.text() == self.answer8:
+            self.corr_notcorr_8.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_8.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_8.setEnabled(False)
+        if self.lineed_9.text() == self.answer9:
+            self.corr_notcorr_9.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_9.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_9.setEnabled(False)
+        if self.lineed_10.text() == self.answer10:
+            self.corr_notcorr_10.setStyleSheet("background-color:rgb(50, 200, 50)")
+        else:
+            self.corr_notcorr_10.setStyleSheet("background-color:rgb(200, 50, 50)")
+        self.lineed_10.setEnabled(False)
+
+
+class QNum71(PatternNumWidget): # Создаём окно задания 7-1
+    def __init__(self):
+        def sortic(end, first_end, second_end, third_end, four_end):
+            if end in [0, 1]:
+                return str(first_end)
+            elif end in [2, 3]:
+                return str(second_end)
+            elif end == 4:
+                return str(third_end)
+            return str(four_end)
+
+
+        super().__init__()
+        # Само задание
+        self.setWindowTitle('7-1 - Кодирование изображений')
+        for num_step in range(10):
+            rand_end = randint(0, 5)  # Определяем суть задания
+            size_x = 2 ** randint(5, 10)
+            size_y = 2 ** randint(5, 10)
+            bite_for_pixel = randint(2, 10)
+            weight_img = size_x * size_y * bite_for_pixel / 1024 / 8
+            weight_img = int(weight_img) if int(weight_img) - weight_img == 0 else weight_img
+            N_lots_colour = 2 ** bite_for_pixel
+            if rand_end in [0, 1]:
+                str_7_1 = f'Рисунок размером {size_x} на {size_y} пикселей занимает в памяти {weight_img} Кбайт\n' \
+                          f'(без учёта сжатия). Найдите максимально возможное количество цветов в палитре изображения.'
+            elif rand_end in [2, 3]:
+                str_7_1 = f'Какой минимальный объём памяти (в Кбайт) нужно зарезервировать, ' \
+                          f'чтобы можно было сохранить любое растровое изображение размером {size_x} на {size_y} ' \
+                          f'пикселов при условии, что в изображении могут использоваться {N_lots_colour} различных ' \
+                          f'цветов? В ответе запишите только целое число, единицу измерения писать не нужно. ' \
+                          f'Если число дробное - запишите ответ через точку.'
+            elif rand_end == 4:
+                bite_for_pixel_2 = randint(1, bite_for_pixel - 1)
+                N_lots_colour_2 = 2 ** bite_for_pixel_2
+                weight_img_2 = size_x * size_y * bite_for_pixel_2 / 1024 / 8
+                dis_weight = weight_img - weight_img_2
+                dis_weight = int(dis_weight) if int(dis_weight) - dis_weight == 0 else dis_weight
+                str_7_1 = f'После преобразования растрового {N_lots_colour}-цветного графического файла в ' \
+                          f'формат: {N_lots_colour_2} цвета, его размер уменьшился на {dis_weight} Кбайт. ' \
+                          f'Каков был размер исходного файла в Кбайтах?'
+            else:
+                bite_for_pixel_2 = randint(1, bite_for_pixel - 1)
+                N_lots_colour_2 = 2 ** bite_for_pixel_2
+                weight_img_2 = size_x * size_y * bite_for_pixel_2 / 1024 / 8
+                dis_weight = weight_img / weight_img_2
+                dis_weight = int(dis_weight) if int(dis_weight) - dis_weight == 0 else round(dis_weight, 2)
+                str_7_1 = f'После преобразования растрового графического файла его объем уменьшился ' \
+                          f'в {dis_weight} раза. Сколько цветов было в палитре первоначально, если после ' \
+                          f'преобразования было получено растровое изображение того' \
+                          f' же разрешения в {N_lots_colour_2}-цветной палитре?'
+            if num_step == 0:
+                self.lab.setText(str_7_1)
+                self.answer1 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 1:
+                self.lab_2.setText(str_7_1)
+                self.answer2 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 2:
+                self.lab_3.setText(str_7_1)
+                self.answer3 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 3:
+                self.lab_4.setText(str_7_1)
+                self.answer4 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 4:
+                self.lab_5.setText(str_7_1)
+                self.answer5 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 5:
+                self.lab_6.setText(str_7_1)
+                self.answer6 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 6:
+                self.lab_7.setText(str_7_1)
+                self.answer7 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 7:
+                self.lab_8.setText(str_7_1)
+                self.answer8 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 8:
+                self.lab_9.setText(str_7_1)
+                self.answer9 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+            elif num_step == 9:
+                self.lab_10.setText(str_7_1)
+                self.answer10 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+
+
+class QNum72(PatternNumWidget): # Создаём окно задания 7-2
+    def __init__(self):
+        def sortic(end, first_end, second_end):
+            if end == 0:
+                return str(first_end)
+            return str(second_end)
+
+        super().__init__()
+        # Само задание
+        self.setWindowTitle('7-2 - Кодирование звука')
+        for num_step in range(10):
+            rand_end = randint(0, 1)
+            list_ul = ['', '']
+            discret = randint(2, 4) / randint(1, 2) # дискретизация
+            discret = int(discret) if int(discret) - discret == 0 else discret
+            permiss =  randint(2, 4) / randint(1, 2) # разрешение
+            permiss = int(permiss) if int(permiss) - permiss == 0 else permiss
+            rand_ul = randint(0, 1)
+            cannal = randint(2, 5)
+            time_b = randint(5, 80)
+            volume = cannal * time_b
+            if rand_ul == 0:
+                list_ul[1] = 'выше'
+                list_ul[0] = 'меньше'
+                factor = permiss / discret
+                while (volume * factor) % 1 != 0:
+                    time_b += 1
+                    volume = cannal * time_b
+            else:
+                list_ul[0] = 'выше'
+                list_ul[1] = 'меньше'
+                factor = discret / permiss
+                while (volume * factor) % 1 != 0:
+                    time_b += 1
+                    volume = cannal * time_b
+            time_a = int(factor * volume)
+            str_7_2 = ''
+            if rand_end == 0:
+                str_7_2 = f'Музыкальный фрагмент был оцифрован и записан в виде файла без использования сжатия ' \
+                          f'данных. Получившийся файл был передан в город А по каналу связи за {time_a} секунд.' \
+                          f' Затем тот же музыкальный фрагмент был оцифрован повторно с разрешением в {permiss} ' \
+                          f'раза {list_ul[0]} и частотой дискретизации в {discret} раза {list_ul[1]}, чем в ' \
+                          f'первый раз. Сжатие данных не производилось. Полученный файл был передан в город Б; ' \
+                          f'пропускная способность канала связи с городом Б в {cannal} раза выше, ' \
+                          f'чем канала связи с городом А. Сколько секунд длилась передача файла в город Б? ' \
+                          f'В ответе запишите только целое число, без единицы измерения.'
+            elif rand_end == 1:
+                str_7_2 = f'Музыкальный фрагмент был оцифрован и записан в виде файла без использования сжатия ' \
+                          f'данных. Получившийся файл был передан в город А по каналу связи за {time_a} секунд. ' \
+                          f'Затем тот же музыкальный фрагмент был оцифрован повторно с разрешением в {permiss} раз' \
+                          f' {list_ul[0]} и частотой дискретизации в {discret} раз {list_ul[1]}, чем в первый ' \
+                          f'раз. Сжатие данных не производилось. Полученный файл был передан в город Б за {time_b} ' \
+                          f'секунд. Во сколько раз скорость пропускная способность канала связи с городом Б ' \
+                          f'выше, чем канала связи с городом А? В ответе запишите только целое число.'
+            if num_step == 0:
+                self.lab.setText(str_7_2)
+                self.answer1 = sortic(rand_end, time_b, cannal)
+            elif num_step == 1:
+                self.lab_2.setText(str_7_2)
+                self.answer2 = sortic(rand_end, time_b, cannal)
+            elif num_step == 2:
+                self.lab_3.setText(str_7_2)
+                self.answer3 = sortic(rand_end, time_b, cannal)
+            elif num_step == 3:
+                self.lab_4.setText(str_7_2)
+                self.answer4 = sortic(rand_end, time_b, cannal)
+            elif num_step == 4:
+                self.lab_5.setText(str_7_2)
+                self.answer5 = sortic(rand_end, time_b, cannal)
+            elif num_step == 5:
+                self.lab_6.setText(str_7_2)
+                self.answer6 = sortic(rand_end, time_b, cannal)
+            elif num_step == 6:
+                self.lab_7.setText(str_7_2)
+                self.answer7 = sortic(rand_end, time_b, cannal)
+            elif num_step == 7:
+                self.lab_8.setText(str_7_2)
+                self.answer8 = sortic(rand_end, time_b, cannal)
+            elif num_step == 8:
+                self.lab_9.setText(str_7_2)
+                self.answer9 = sortic(rand_end, time_b, cannal)
+            elif num_step == 9:
+                self.lab_10.setText(str_7_2)
+                self.answer10 = sortic(rand_end, time_b, cannal)
+
+
+class QNum8a(PatternNumWidget): # Создаём окно задания 8а
+    def __init__(self):
+        # Функции-помошники
+        def sortic(end, first_end, second_end, third_end):
+            if end == 0:
+                return first_end
+            elif end == 1:
+                return str(second_end)
+            return str(third_end)
+
+        def gen_answer_for_8a_third_end(count_sim, count_word, answer_num):
+            counter = 0
+            if count_word == 4:
+                for s1 in sim:
+                    for s2 in sim:
+                        for s3 in sim:
+                            for s4 in sim:
+                                counter += 1
+                                if s1 == answer_num:
+                                    return counter
+            else:
+                for s1 in sim:
+                    for s2 in sim:
+                        for s3 in sim:
+                            for s4 in sim:
+                                for s5 in sim:
+                                    counter += 1
+                                    if s1 == answer_num:
+                                        return counter
+
+        def gen_answer_for_8a_first_end(count_sim, count_word, answer_num):
+            counter = 0
+            if count_word == 4:
+                for s1 in sim:
+                    for s2 in sim:
+                        for s3 in sim:
+                            for s4 in sim:
+                                counter += 1
+                                if counter == answer_num:
+                                    return (s1 + s2 + s3 + s4)
+            else:
+                for s1 in sim:
+                    for s2 in sim:
+                        for s3 in sim:
+                            for s4 in sim:
+                                for s5 in sim:
+                                    counter += 1
+                                    if counter == answer_num:
+                                        return (s1 + s2 + s3 + s4 +  s5)
+
+        super().__init__()
+        # Само задание
+        self.setWindowTitle('8-a - Слова в алфавитном порядке')
+        for num_step in range(10):
+            rand_word = randint(4, 5)
+            rand_sim = randint(3, 4)
+            rand_end = randint(0, 2) # Определяем суть задания
+            limit = rand_sim ** rand_word
+            sim = sample(list_8a_sim, k=rand_sim)
+            str_8a = f'Все {rand_word}-буквенные слова, составленные из букв {", ".join(sim)}, ' \
+                     f'записаны в алфавитном порядке. Вот начало списка:\n'
+            if rand_word == 4:
+                for i in range(rand_sim):
+                    str_sim = ''
+                    str_sim += sim[0] + sim[0] + sim[0] + sim[i]
+                    str_8a += str_sim + '\n'
+                str_8a += sim[0] + sim[0] + sim[1] + sim[0] + '\n'
+            else:
+                for i in range(rand_sim):
+                    str_sim = ''
+                    str_sim += sim[0] + sim[0] + sim[0] + sim[0] + sim[i]
+                    str_8a += str_sim + '\n'
+                str_8a += sim[0] + sim[0] + sim[0] + sim[1] + sim[0] + '\n'
+            if rand_end == 0:       # Требуется указать слово по номеру
+                answer_num = randint(70, limit - 10)
+                str_8a_end = f'Запишите слово, которое стоит на {answer_num}-м месте от начала списка'
+            elif rand_end == 1:     # Требуется указать номер по слову
+                answer_num = randint(70, limit - 10)
+                str_8a_end = f'Укажите номер слова {gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num)}.'
+            else:       # Требуется указать номер по первой букве
+                answer_num = sample(sim[1:], k=1)[0]
+                str_8a_end = f'Укажите номер первого слова, которое начинается с буквы {answer_num}.'
+            str_8a += str_8a_end
+            if num_step == 0:
+                self.lab.setText(str_8a)
+                self.answer1 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 1:
+                self.lab_2.setText(str_8a)
+                self.answer2 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 2:
+                self.lab_3.setText(str_8a)
+                self.answer3 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 3:
+                self.lab_4.setText(str_8a)
+                self.answer4 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 4:
+                self.lab_5.setText(str_8a)
+                self.answer5 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 5:
+                self.lab_6.setText(str_8a)
+                self.answer6 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 6:
+                self.lab_7.setText(str_8a)
+                self.answer7 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 7:
+                self.lab_8.setText(str_8a)
+                self.answer8 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 8:
+                self.lab_9.setText(str_8a)
+                self.answer9 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+            elif num_step == 9:
+                self.lab_10.setText(str_8a)
+                self.answer10 = sortic(rand_end, gen_answer_for_8a_first_end(rand_sim, rand_word, answer_num),
+                                      answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
+
+
+list_8a_sim = ['А', 'О', 'У', 'К', 'Е', 'Р', 'Т', 'М', 'И'] # Нужные условия для заданий
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = EnterWindow()
+    ex.show()
+    sys.exit(app.exec())
