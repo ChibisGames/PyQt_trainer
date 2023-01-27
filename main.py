@@ -1,19 +1,45 @@
 import sys
 import sqlite3
 from random import randint, sample
-from data.enter import UiEnter
-from data.choice import UiChoice
-from data.pattern_num import UiPatternNum
-from data.action import UiAction
 from PyQt5 import uic
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QMainWindow, QAction, QLabel
 
 
-class EnterWindow(QWidget, UiEnter):
+class DataTaker:
+    def __init__(self):
+        self.con = sqlite3.connect("data/registr.db")
+        self.cur = self.con.cursor()
+
+    def save_login(self, login):
+        self.login = login
+
+    def open_stats(self):
+        self.stat_71 = self.cur.execute("""SELECT n71 FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+        self.stat_72 = self.cur.execute("""SELECT n72 FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+        self.stat_8a = self.cur.execute("""SELECT n8a FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+
+        self.try_71 = self.cur.execute("""SELECT trys71 FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+        self.try_72 = self.cur.execute("""SELECT trys72 FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+        self.try_8a = self.cur.execute("""SELECT trys8a FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+
+    def save(self):
+        self.cur.execute("""UPDATE Users SET n71 = '""" + str(self.stat_71) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
+        self.cur.execute("""UPDATE Users SET trys71 = '""" + str(self.try_71) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
+        self.con.commit()
+
+
+class EnterWindow(QWidget):
     def __init__(self, *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
-        #uic.loadUi('enter.ui', self)
-        self.setupUi(self)
+        uic.loadUi('data/enter.ui', self)
         self.btn_singin.clicked.connect(self.sing_in)
         self.btn_singup.clicked.connect(self.sing_up)
         self.anonim.clicked.connect(self.f_anonim)
@@ -34,11 +60,11 @@ class EnterWindow(QWidget, UiEnter):
         self.widget_window.show()
         self.close()
 
-
-class Action(QWidget, UiAction):
+dbtaker = DataTaker()
+class Action(QWidget):
     def __init__(self, typ='', *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
-        self.setupUi(self)
+        uic.loadUi('data/action.ui', self)
         self.typ = typ
         if typ == 'in':
             self.info_label.setText('Вход')
@@ -88,10 +114,11 @@ class Action(QWidget, UiAction):
 
         log_input = str(self.line_log.text())
         pas_input = str(self.line_pas.text())
+
         # Проходит вход
         if self.typ == 'in':
             try:
-                con = sqlite3.connect("registr.db")
+                con = sqlite3.connect("data/registr.db")
                 cur = con.cursor()
                 log_in_data = cur.execute("""SELECT UserLogin FROM Users 
                 WHERE UserLogin = '""" + log_input + "'").fetchall()
@@ -99,6 +126,9 @@ class Action(QWidget, UiAction):
                 WHERE UserLogin = '""" + log_input + "'").fetchall()
                 con.close()
                 if str(log_in_data[0][0]) == log_input and pas_input == str(pas_in_data[0][0]):
+                    # Открытие строки статистики
+                    dbtaker.save_login(log_input)
+                    dbtaker.open_stats()
                     self.action_battoun()
                 else:
                     self.result_lab.setText('Неверный логин или пароль.')
@@ -107,7 +137,7 @@ class Action(QWidget, UiAction):
         # Проходит регистрация
         if self.typ == 'up':
             try:
-                con = sqlite3.connect("registr.db")
+                con = sqlite3.connect("data/registr.db")
                 cur = con.cursor()
                 log_in_data = cur.execute("""SELECT UserLogin FROM Users 
                 WHERE UserLogin = '""" + log_input + "'").fetchall()
@@ -135,11 +165,10 @@ class Action(QWidget, UiAction):
         self.close()
 
 
-class Choice(QMainWindow, UiChoice): # Создаём окно с выбором заданий
+class Choice(QMainWindow): # Создаём окно с выбором заданий
     def __init__(self, *args, **kwargs):
         QMainWindow.__init__(self, *args, **kwargs)
-        #uic.loadUi('choice.ui', self)
-        self.setupUi(self)
+        uic.loadUi('data/choice.ui', self)
         self.num_8a.clicked.connect(self.number_8a)
         self.num_7_1.clicked.connect(self.number_7_1)
         self.num_7_2.clicked.connect(self.number_7_2)
@@ -157,65 +186,80 @@ class Choice(QMainWindow, UiChoice): # Создаём окно с выбором
         self.widget_window.show()
 
 
-class PatternNumWidget(QWidget, UiPatternNum):
+class PatternNumWidget(QWidget):
     def __init__(self, *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
         super().__init__()
-        self.setupUi(self)
-        self.check_answer.clicked.connect(self.checking_answer)
+        uic.loadUi('data/pattern_num.ui', self)
+        self.correct_ans_counter = 0
 
+        self.check_answer.clicked.connect(self.checking_answer)
 
     def checking_answer(self):
         if self.lineed.text() == self.answer1:
             self.corr_notcorr.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed.setEnabled(False)
         if self.lineed_2.text() == self.answer2:
             self.corr_notcorr_2.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_2.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_2.setEnabled(False)
         if self.lineed_3.text() == self.answer3:
             self.corr_notcorr_3.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_3.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_3.setEnabled(False)
         if self.lineed_4.text() == self.answer4:
             self.corr_notcorr_4.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_4.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_4.setEnabled(False)
         if self.lineed_5.text() == self.answer5:
             self.corr_notcorr_5.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_5.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_5.setEnabled(False)
         if self.lineed_6.text() == self.answer6:
             self.corr_notcorr_6.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_6.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_6.setEnabled(False)
         if self.lineed_7.text() == self.answer7:
             self.corr_notcorr_7.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_7.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_7.setEnabled(False)
         if self.lineed_8.text() == self.answer8:
             self.corr_notcorr_8.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_8.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_8.setEnabled(False)
         if self.lineed_9.text() == self.answer9:
             self.corr_notcorr_9.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_9.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_9.setEnabled(False)
         if self.lineed_10.text() == self.answer10:
             self.corr_notcorr_10.setStyleSheet("background-color:rgb(50, 200, 50)")
+            self.correct_ans_counter += 1
         else:
             self.corr_notcorr_10.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_10.setEnabled(False)
+        if self.__class__.__name__ == 'QNum71':
+            dbtaker.stat_71 += self.correct_ans_counter
+            dbtaker.try_71 += 1
+            dbtaker.save()
 
 
 class QNum71(PatternNumWidget): # Создаём окно задания 7-1
@@ -228,7 +272,6 @@ class QNum71(PatternNumWidget): # Создаём окно задания 7-1
             elif end == 4:
                 return str(third_end)
             return str(four_end)
-
 
         super().__init__()
         # Само задание
@@ -272,6 +315,7 @@ class QNum71(PatternNumWidget): # Создаём окно задания 7-1
             if num_step == 0:
                 self.lab.setText(str_7_1)
                 self.answer1 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
+                print(self.answer1)
             elif num_step == 1:
                 self.lab_2.setText(str_7_1)
                 self.answer2 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
