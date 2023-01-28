@@ -33,6 +33,14 @@ class DataTaker:
         WHERE UserLogin = '""" + self.login + "'")
         self.cur.execute("""UPDATE Users SET trys71 = '""" + str(self.try_71) + """' 
         WHERE UserLogin = '""" + self.login + "'")
+        self.cur.execute("""UPDATE Users SET n72 = '""" + str(self.stat_72) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
+        self.cur.execute("""UPDATE Users SET trys72 = '""" + str(self.try_72) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
+        self.cur.execute("""UPDATE Users SET n8a = '""" + str(self.stat_8a) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
+        self.cur.execute("""UPDATE Users SET trys8a = '""" + str(self.try_8a) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
         self.con.commit()
 
 
@@ -56,11 +64,12 @@ class EnterWindow(QWidget):
         self.close()
 
     def f_anonim(self):
+        dbtaker.save_login('Anonymous')
         self.widget_window = Choice()
         self.widget_window.show()
         self.close()
 
-dbtaker = DataTaker()
+
 class Action(QWidget):
     def __init__(self, typ='', *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
@@ -172,6 +181,31 @@ class Choice(QMainWindow): # Создаём окно с выбором зада�
         self.num_8a.clicked.connect(self.number_8a)
         self.num_7_1.clicked.connect(self.number_7_1)
         self.num_7_2.clicked.connect(self.number_7_2)
+        self.reload_stats.clicked.connect(self.stat_reload)
+        self.la_login_2.setText(dbtaker.login)
+        if dbtaker.login != 'Anonymous': # сделать обновление страницы
+            self.ltry71.setText(str(dbtaker.try_71))
+            self.ltry72.setText(str(dbtaker.try_72))
+            self.ltry8a.setText(str(dbtaker.try_8a))
+            if dbtaker.try_71 == 0:
+                self.lmb71.setText('0.0')
+            else:
+                self.lmb71.setText(str(round(dbtaker.stat_71 / dbtaker.try_71, 3)))
+            if dbtaker.try_72 == 0:
+                self.lmb72.setText('0.0')
+            else:
+                self.lmb72.setText(str(round(dbtaker.stat_72 / dbtaker.try_72, 3)))
+            if dbtaker.try_8a == 0:
+                self.lmb8a.setText('0.0')
+            else:
+                self.lmb8a.setText(str(round(dbtaker.stat_8a / dbtaker.try_8a, 3)))
+        else:
+            self.lmb71.setText('-')
+            self.lmb72.setText('-')
+            self.lmb8a.setText('-')
+            self.ltry71.setText('-')
+            self.ltry72.setText('-')
+            self.ltry8a.setText('-')
 
     def number_8a(self):
         self.widget_window = QNum8a()
@@ -185,6 +219,31 @@ class Choice(QMainWindow): # Создаём окно с выбором зада�
         self.widget_window = QNum72()
         self.widget_window.show()
 
+    def stat_reload(self):
+        if dbtaker.login != 'Anonymous': # сделать обновление страницы
+            self.ltry71.setText(str(dbtaker.try_71))
+            self.ltry72.setText(str(dbtaker.try_72))
+            self.ltry8a.setText(str(dbtaker.try_8a))
+            if dbtaker.try_71 == 0:
+                self.lmb71.setText('0.0')
+            else:
+                self.lmb71.setText(str(round(dbtaker.stat_71 / dbtaker.try_71, 3)))
+            if dbtaker.try_72 == 0:
+                self.lmb72.setText('0.0')
+            else:
+                self.lmb72.setText(str(round(dbtaker.stat_72 / dbtaker.try_72, 3)))
+            if dbtaker.try_8a == 0:
+                self.lmb8a.setText('0.0')
+            else:
+                self.lmb8a.setText(str(round(dbtaker.stat_8a / dbtaker.try_8a, 3)))
+        else:
+            self.lmb71.setText('-')
+            self.lmb72.setText('-')
+            self.lmb8a.setText('-')
+            self.ltry71.setText('-')
+            self.ltry72.setText('-')
+            self.ltry8a.setText('-')
+
 
 class PatternNumWidget(QWidget):
     def __init__(self, *args, **kwargs):
@@ -192,8 +251,8 @@ class PatternNumWidget(QWidget):
         super().__init__()
         uic.loadUi('data/pattern_num.ui', self)
         self.correct_ans_counter = 0
-
         self.check_answer.clicked.connect(self.checking_answer)
+
 
     def checking_answer(self):
         if self.lineed.text() == self.answer1:
@@ -256,10 +315,22 @@ class PatternNumWidget(QWidget):
         else:
             self.corr_notcorr_10.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_10.setEnabled(False)
-        if self.__class__.__name__ == 'QNum71':
-            dbtaker.stat_71 += self.correct_ans_counter
-            dbtaker.try_71 += 1
-            dbtaker.save()
+
+        if dbtaker.login != 'Anonymous':
+            if self.__class__.__name__ == 'QNum71':
+                dbtaker.stat_71 += self.correct_ans_counter
+                dbtaker.try_71 += 1
+                dbtaker.save()
+
+            elif self.__class__.__name__ == 'QNum72':
+                dbtaker.stat_72 += self.correct_ans_counter
+                dbtaker.try_72 += 1
+                dbtaker.save()
+
+            elif self.__class__.__name__ == 'QNum8a':
+                dbtaker.stat_8a += self.correct_ans_counter
+                dbtaker.try_8a += 1
+                dbtaker.save()
 
 
 class QNum71(PatternNumWidget): # Создаём окно задания 7-1
@@ -315,7 +386,6 @@ class QNum71(PatternNumWidget): # Создаём окно задания 7-1
             if num_step == 0:
                 self.lab.setText(str_7_1)
                 self.answer1 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
-                print(self.answer1)
             elif num_step == 1:
                 self.lab_2.setText(str_7_1)
                 self.answer2 = sortic(rand_end, N_lots_colour, weight_img, weight_img, N_lots_colour)
@@ -559,6 +629,7 @@ class QNum8a(PatternNumWidget): # Создаём окно задания 8а
 list_8a_sim = ['А', 'О', 'У', 'К', 'Е', 'Р', 'Т', 'М', 'И'] # Нужные условия для заданий
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    dbtaker = DataTaker()
     ex = EnterWindow()
     ex.show()
     sys.exit(app.exec())
