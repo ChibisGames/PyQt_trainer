@@ -251,6 +251,7 @@ class PatternNumWidget(QWidget):
         super().__init__()
         uic.loadUi('data/pattern_num.ui', self)
         self.correct_ans_counter = 0
+        self.true = False
         self.check_answer.clicked.connect(self.checking_answer)
 
 
@@ -315,22 +316,23 @@ class PatternNumWidget(QWidget):
         else:
             self.corr_notcorr_10.setStyleSheet("background-color:rgb(200, 50, 50)")
         self.lineed_10.setEnabled(False)
+        if not self.true:
+            self.true = True
+            if dbtaker.login != 'Anonymous':
+                if self.__class__.__name__ == 'QNum71':
+                    dbtaker.stat_71 += self.correct_ans_counter
+                    dbtaker.try_71 += 1
+                    dbtaker.save()
 
-        if dbtaker.login != 'Anonymous':
-            if self.__class__.__name__ == 'QNum71':
-                dbtaker.stat_71 += self.correct_ans_counter
-                dbtaker.try_71 += 1
-                dbtaker.save()
+                elif self.__class__.__name__ == 'QNum72':
+                    dbtaker.stat_72 += self.correct_ans_counter
+                    dbtaker.try_72 += 1
+                    dbtaker.save()
 
-            elif self.__class__.__name__ == 'QNum72':
-                dbtaker.stat_72 += self.correct_ans_counter
-                dbtaker.try_72 += 1
-                dbtaker.save()
-
-            elif self.__class__.__name__ == 'QNum8a':
-                dbtaker.stat_8a += self.correct_ans_counter
-                dbtaker.try_8a += 1
-                dbtaker.save()
+                elif self.__class__.__name__ == 'QNum8a':
+                    dbtaker.stat_8a += self.correct_ans_counter
+                    dbtaker.try_8a += 1
+                    dbtaker.save()
 
 
 class QNum71(PatternNumWidget): # Создаём окно задания 7-1
