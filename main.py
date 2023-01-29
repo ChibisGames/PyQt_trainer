@@ -159,13 +159,14 @@ class Action(QWidget):
                         VALUES('""" + log_input + "', '" + pas_input + "')")
                         con.commit()
                         con.close()
+                        dbtaker.save_login(log_input)
+                        dbtaker.open_stats()
                         self.action_battoun()
                     else:
                         self.result_lab.setText('Такой логин уже существует или пароль не соответствует требованиям.')
             except Exception:
                 con.close()
                 self.result_lab.setText('Неверный логин или пароль.')
-        self.user_login = log_input
 
 
     def action_battoun(self):
