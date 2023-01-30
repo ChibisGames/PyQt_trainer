@@ -86,11 +86,25 @@ class Action(QWidget):
         self.actoin_btn.clicked.connect(self.check_log_pass)
 
     def check_log_pass(self):
+
+        def check_login(logins):
+            def probel_login(log):
+                if ' ' in log:
+                    return False
+                return True
+            if probel_login(logins):
+                return True
+            return False
         def passworld_check(passworld):
             def pas_len(password):
                 if len(password) > 8:
                     return True
                 return False
+
+            def probel_password(password):
+                if ' ' in password:
+                    return False
+                return True
 
             def low_and_up(password: str):
                 lower, upper = False, False
@@ -117,7 +131,7 @@ class Action(QWidget):
 
             combat_s = 'qwertyuiop!asdfghjkl!zxcvbnm!йцукенгшщзхъ!фывапролджэё!ячсмитьбю'
             p = passworld
-            if pas_len(p) and low_and_up(p) and dig(p) and combat(p):
+            if pas_len(p) and low_and_up(p) and dig(p) and combat(p) and probel_password(p):
                 return True
             return False
 
@@ -154,7 +168,7 @@ class Action(QWidget):
                     if  log_in_data[0][0] == log_input:
                         self.result_lab.setText('Такой логин уже существует или пароль не соответствует требованиям.')
                 except IndexError:
-                    if passworld_check(pas_input):
+                    if passworld_check(pas_input) and check_login(log_input):
                         cur.execute("""INSERT INTO Users(UserLogin, Password) 
                         VALUES('""" + log_input + "', '" + pas_input + "')")
                         con.commit()
