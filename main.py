@@ -86,7 +86,6 @@ class Action(QWidget):
         self.actoin_btn.clicked.connect(self.check_log_pass)
 
     def check_log_pass(self):
-
         def check_login(logins):
             def probel_login(log):
                 if ' ' in log:
@@ -95,6 +94,7 @@ class Action(QWidget):
             if probel_login(logins):
                 return True
             return False
+
         def passworld_check(passworld):
             def pas_len(password):
                 if len(password) > 8:
