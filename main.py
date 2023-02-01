@@ -189,7 +189,6 @@ class Action(QWidget):
                 con.close()
                 self.result_lab.setText('Неверный логин или пароль.')
 
-
     def action_battoun(self):
         self.widget_window = Choice()
         self.widget_window.show()
