@@ -1,5 +1,4 @@
-import sys
-import sqlite3
+import sys, os, sqlite3
 from random import randint, sample
 from PyQt5 import uic
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QMainWindow, QAction, QLabel
@@ -189,7 +188,6 @@ class Action(QWidget):
             except Exception:
                 con.close()
                 self.result_lab.setText('Неверный логин или пароль.')
-
 
     def action_battoun(self):
         self.widget_window = Choice()
@@ -737,8 +735,18 @@ class QNum8a(PatternNumWidget): # Создаём окно задания 8а
                                       answer_num, gen_answer_for_8a_third_end(rand_sim, rand_word, answer_num))
 
 
+def check_files():
+    list_of_files = ['data/action.ui', 'data/choice.ui', 'data/enter.ui',
+                     'data/pattern_num.ui', 'data/registr.db']
+    for file in list_of_files:
+        if not os.path.exists(file):
+            print('Нехватка файлов')
+            return False
+    return True
+
+
 list_8a_sim = ['А', 'О', 'У', 'К', 'Е', 'Р', 'Т', 'М', 'И'] # Нужные условия для заданий
-if __name__ == '__main__':
+if __name__ == '__main__' and check_files():
     app = QApplication(sys.argv)
     dbtaker = DataTaker()
     ex = EnterWindow()
