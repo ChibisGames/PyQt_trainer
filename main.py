@@ -18,12 +18,16 @@ class DataTaker:
         WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
         self.stat_72 = self.cur.execute("""SELECT n72 FROM Users 
         WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+        self.stat_7v = self.cur.execute("""SELECT n7v FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
         self.stat_8a = self.cur.execute("""SELECT n8a FROM Users 
         WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
 
         self.try_71 = self.cur.execute("""SELECT trys71 FROM Users 
         WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
         self.try_72 = self.cur.execute("""SELECT trys72 FROM Users 
+        WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
+        self.try_7v = self.cur.execute("""SELECT trys7v FROM Users 
         WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
         self.try_8a = self.cur.execute("""SELECT trys8a FROM Users 
         WHERE UserLogin = """ + "'" + self.login + "'").fetchall()[0][0]
@@ -36,6 +40,10 @@ class DataTaker:
         self.cur.execute("""UPDATE Users SET n72 = '""" + str(self.stat_72) + """' 
         WHERE UserLogin = '""" + self.login + "'")
         self.cur.execute("""UPDATE Users SET trys72 = '""" + str(self.try_72) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
+        self.cur.execute("""UPDATE Users SET n7v = '""" + str(self.stat_7v) + """' 
+        WHERE UserLogin = '""" + self.login + "'")
+        self.cur.execute("""UPDATE Users SET trys7v = '""" + str(self.try_7v) + """' 
         WHERE UserLogin = '""" + self.login + "'")
         self.cur.execute("""UPDATE Users SET n8a = '""" + str(self.stat_8a) + """' 
         WHERE UserLogin = '""" + self.login + "'")
@@ -196,11 +204,13 @@ class Choice(QMainWindow): # Создаём окно с выбором зада�
         self.num_8a.clicked.connect(self.number_8a)
         self.num_7_1.clicked.connect(self.number_7_1)
         self.num_7_2.clicked.connect(self.number_7_2)
+        self.num_7v.clicked.connect(self.number_7v)
         self.reload_stats.clicked.connect(self.stat_reload)
         self.la_login_2.setText(dbtaker.login)
         if dbtaker.login != 'Anonymous': # сделать обновление страницы
             self.ltry71.setText(str(dbtaker.try_71))
             self.ltry72.setText(str(dbtaker.try_72))
+            self.ltry7v.setText(str(dbtaker.try_7v))
             self.ltry8a.setText(str(dbtaker.try_8a))
             if dbtaker.try_71 == 0:
                 self.lmb71.setText('0.0')
@@ -210,6 +220,10 @@ class Choice(QMainWindow): # Создаём окно с выбором зада�
                 self.lmb72.setText('0.0')
             else:
                 self.lmb72.setText(str(round(dbtaker.stat_72 / dbtaker.try_72, 3)))
+            if dbtaker.try_7v == 0:
+                self.lmb7v.setText('0.0')
+            else:
+                self.lmb7v.setText(str(round(dbtaker.stat_7v / dbtaker.try_7v, 3)))
             if dbtaker.try_8a == 0:
                 self.lmb8a.setText('0.0')
             else:
@@ -217,9 +231,11 @@ class Choice(QMainWindow): # Создаём окно с выбором зада�
         else:
             self.lmb71.setText('-')
             self.lmb72.setText('-')
+            self.lmb7v.setText('-')
             self.lmb8a.setText('-')
             self.ltry71.setText('-')
             self.ltry72.setText('-')
+            self.ltry7v.setText('-')
             self.ltry8a.setText('-')
 
     def number_8a(self):
@@ -234,10 +250,15 @@ class Choice(QMainWindow): # Создаём окно с выбором зада�
         self.widget_window = QNum72()
         self.widget_window.show()
 
+    def number_7v(self):
+        self.widget_window = QNum7v()
+        self.widget_window.show()
+
     def stat_reload(self):
         if dbtaker.login != 'Anonymous': # сделать обновление страницы
             self.ltry71.setText(str(dbtaker.try_71))
             self.ltry72.setText(str(dbtaker.try_72))
+            self.ltry7v.setText(str(dbtaker.try_7v))
             self.ltry8a.setText(str(dbtaker.try_8a))
             if dbtaker.try_71 == 0:
                 self.lmb71.setText('0.0')
@@ -247,6 +268,10 @@ class Choice(QMainWindow): # Создаём окно с выбором зада�
                 self.lmb72.setText('0.0')
             else:
                 self.lmb72.setText(str(round(dbtaker.stat_72 / dbtaker.try_72, 3)))
+            if dbtaker.try_7v == 0:
+                self.lmb7v.setText('0.0')
+            else:
+                self.lmb7v.setText(str(round(dbtaker.stat_7v / dbtaker.try_7v, 3)))
             if dbtaker.try_8a == 0:
                 self.lmb8a.setText('0.0')
             else:
@@ -342,6 +367,11 @@ class PatternNumWidget(QWidget):
                 elif self.__class__.__name__ == 'QNum72':
                     dbtaker.stat_72 += self.correct_ans_counter
                     dbtaker.try_72 += 1
+                    dbtaker.save()
+
+                elif self.__class__.__name__ == 'QNum7v':
+                    dbtaker.stat_7v += self.correct_ans_counter
+                    dbtaker.try_7v += 1
                     dbtaker.save()
 
                 elif self.__class__.__name__ == 'QNum8a':
@@ -516,6 +546,70 @@ class QNum72(PatternNumWidget): # Создаём окно задания 7-2
             elif num_step == 9:
                 self.lab_10.setText(str_7_2)
                 self.answer10 = sortic(rand_end, time_b, cannal)
+
+
+class QNum7v(PatternNumWidget): # Создаём окно задания 7-1
+    def __init__(self):
+        super().__init__()
+        # Само задание
+        self.setWindowTitle('7v - Скорость передачи данных')
+        for num_step in range(10):
+            size = randint(5, 100)
+            speed_log = randint(20, 22)
+            arch = randint(2, 16) * 5
+            time_arch = randint(10, 22)
+            time_rearch = randint(1, 3)
+            str_7v = f'Документ объёмом {size} Мбайт можно передать с одного компьютера на другой двумя способами:\n'\
+            f'А) сжать архиватором, передать архив по каналу связи, распаковать;\n'\
+            f'Б) передать по каналу связи без использования архиватора.\n'\
+            f'Какой способ быстрее и насколько, если\n'\
+            f'- средняя скорость передачи данных по каналу связи составляет 2^{speed_log} бит в секунду,\n'\
+            f'- объём сжатого архиватором документа равен {arch}% от исходного,\n'\
+            f'- время, требуемое на сжатие документа, - {time_arch} секунд, на распаковку - {time_rearch} секунды? \n'\
+            f'В ответе напишите букву А, если способ А быстрее, или Б, если быстрее способ Б.'\
+            f'Сразу после буквы напишите на сколько ЦЕЛЫХ секунд один способ быстрее другого. '\
+            f'(Если способы равны в ответ напишите: А0)'\
+            '  '
+            ans_arch = (size * arch / 100 * 2 ** 23) / 2 ** speed_log + time_arch + time_rearch
+            ans_not_arch = size * 2 ** 23 / 2 ** speed_log
+            if ans_arch > ans_not_arch:
+                answer = int(ans_arch - ans_not_arch)
+                answer = 'Б' + str(answer)
+            elif ans_arch == ans_not_arch:
+                answer = 'А0'
+            else:
+                answer = int(ans_not_arch - ans_arch)
+                answer = 'А' + str(answer)
+            if num_step == 0:
+                self.lab.setText(str_7v)
+                self.answer1 = answer
+            elif num_step == 1:
+                self.lab_2.setText(str_7v)
+                self.answer2 = answer
+            elif num_step == 2:
+                self.lab_3.setText(str_7v)
+                self.answer3 = answer
+            elif num_step == 3:
+                self.lab_4.setText(str_7v)
+                self.answer4 = answer
+            elif num_step == 4:
+                self.lab_5.setText(str_7v)
+                self.answer5 = answer
+            elif num_step == 5:
+                self.lab_6.setText(str_7v)
+                self.answer6 = answer
+            elif num_step == 6:
+                self.lab_7.setText(str_7v)
+                self.answer7 = answer
+            elif num_step == 7:
+                self.lab_8.setText(str_7v)
+                self.answer8 = answer
+            elif num_step == 8:
+                self.lab_9.setText(str_7v)
+                self.answer9 = answer
+            elif num_step == 9:
+                self.lab_10.setText(str_7v)
+                self.answer10 = answer
 
 
 class QNum8a(PatternNumWidget): # Создаём окно задания 8а
